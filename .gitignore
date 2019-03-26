@@ -30,3 +30,10 @@
 *.exe
 *.out
 *.app
+
+# Clion
+.idea/
+cmake-build-debug/
+CMakeLists.txt
+hw2-spring-2019.pdf
+test*
