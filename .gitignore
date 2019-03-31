@@ -37,3 +37,6 @@ cmake-build-debug/
 CMakeLists.txt
 hw2-spring-2019.pdf
 test*
+common_dir/
+input_dir/
+mirror_dir/

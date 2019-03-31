@@ -1,7 +1,6 @@
 #ifndef EXERCISE_II_PROGRAM_ARGUMENTS_HPP
 #define EXERCISE_II_PROGRAM_ARGUMENTS_HPP
 
-
 #include <cstdint>
 #include <cstddef>
 #include <getopt.h>
@@ -39,6 +38,5 @@ struct Client_Parameters {
 };
 
 extern Client_Parameters arguments;
-
 
 #endif //EXERCISE_II_PROGRAM_ARGUMENTS_HPP

@@ -1,6 +1,7 @@
 #include <iostream>
 #include "../Include/Utils.hpp"
 #include "../Include/Client.hpp"
+#include "../Include/List.hpp"
 
 int main(int argc, char **argv) {
     if (argc < 13) Utils::Usage();

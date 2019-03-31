@@ -4,6 +4,9 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <cinttypes>
+#include <dirent.h>
+#include <iostream>
+#include <array>
 #include "../Include/Client.hpp"
 #include "../Include/String_Utils.hpp"
 #include "../Include/Report_Utils.hpp"
@@ -14,6 +17,9 @@ using namespace Utils;
 using namespace Utils::String;
 using namespace Utils::Report;
 using namespace Utils::File;
+
+Client::Client(int argc, char **argv)
+        : argc_{argc}, argv_{argv} {}
 
 Client_Parameters Client::ParseClientParameters(int argc, char **argv) {
     int c;
@@ -77,15 +83,6 @@ void Client::ValidateParameters(Client_Parameters &program_arguments) {
     }
 }
 
-void Client::Start() {
-    arguments_ = ParseClientParameters(argc_, argv_);
-    ValidateParameters(arguments_);
-    CreateIDFile();
-}
-
-Client::Client(int argc, char **argv)
-: argc_{argc}, argv_{argv} {}
-
 void Client::CreateIDFile() {
     char *file_path;
     asprintf(&file_path, "%s/%" PRIu64 ".id", arguments_.common_dir, arguments_.id);
@@ -96,10 +93,48 @@ void Client::CreateIDFile() {
     if (fd == -1) {
         Die("Couldn't create ID file for client %" PRIu64 "!", arguments_.id);
     }
-    char *pid_str;
-    asprintf(&pid_str, "%d", getpid());
-    write(fd, pid_str, strlen(pid_str));
-    free(pid_str);
+    int pid = getpid();
+    write(fd, &pid, sizeof(int));
     free(file_path);
     close(fd);
+}
+
+Array<char *> Client::GetNewClients(const char *path) {
+    ssize_t file_n = Utils::File::CountReguralFilesInDirectory(path);
+    if (file_n == -1) {
+        return Array<char *>{};
+    }
+    DIR *dirp = opendir(path);
+    struct dirent *entry;
+    Array<char *> clients{static_cast<size_t>(file_n)};
+    size_t i = 0U;
+    while ((entry = readdir(dirp)) != NULL) {
+        if (entry->d_type == DT_REG) {
+            clients[i++] = AllocateAndCopyString(entry->d_name);
+        }
+    }
+    return clients;
+}
+
+void Client::Start() {
+    arguments_ = ParseClientParameters(argc_, argv_);
+    ValidateParameters(arguments_);
+    CreateIDFile();
+    char *id_file;
+    asprintf(&id_file, "%" PRIu64 ".id", arguments_.id);
+    clients_map_[id_file] = true;
+    while (!stop_) {
+        sleep(sleep_period_);
+        ReportError("Foo");
+        Array<char *> clients = GetNewClients(arguments_.common_dir);
+        if (clients.Size() != 0) {
+            for (size_t i = 0U; i != clients.Size(); ++i) {
+                char *client = clients[i];
+                if (!clients_map_.Contains(client)) {
+                    clients_map_[client] = true;
+                    ReportError("Spawning process...");
+                }
+            }
+        }
+    }
 }

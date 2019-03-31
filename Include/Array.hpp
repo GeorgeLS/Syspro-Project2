@@ -14,6 +14,8 @@ namespace Types {
     public:
         Array() : array_{nullptr}, elements_n_{0U} {}
 
+        Array(const size_t elements) : elements_n_{elements}, array_{Memory::malloc<T>(elements)} {};
+
         Array(std::initializer_list<T> list) {
             this->Construct(list);
         }
@@ -22,18 +24,18 @@ namespace Types {
             this->Construct(array);
         }
 
-        Array &operator=(const Array<T> &array) {
+        Array<T> &operator=(const Array<T> &array) {
             this->Destroy();
             this->Construct(array);
             return *this;
         }
 
         Array(Array<T> &&array) noexcept
-        : array_{nullptr}, elements_n_{0U} {
+                : array_{nullptr}, elements_n_{0U} {
             this->Move(array);
         }
 
-        Array &operator=(Array<T> &&array) noexcept {
+        Array<T> &operator=(Array<T> &&array) noexcept {
             this->Move(array);
             return *this;
         }
@@ -91,4 +93,4 @@ namespace Types {
     };
 }
 
-#endif //EXERCISE_II_ARRAY_HPP
+#endif //EXERCISE_II_ARRAY_HPPs

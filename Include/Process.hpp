@@ -2,6 +2,7 @@
 #define EXERCISE_II_PROCESS_HPP
 
 #include <unistd.h>
+#include <algorithm>
 #include "Report_Utils.hpp"
 #include "Array.hpp"
 #include "String_Utils.hpp"
@@ -12,7 +13,7 @@ using namespace Utils::Report;
 namespace Wrappers {
     class Process {
     public:
-        Process() = default;
+        Process() = delete;
 
         Process(const char *exe_path, Types::Array<char *> parameters)
         : argv_{std::move(parameters)} {

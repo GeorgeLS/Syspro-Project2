@@ -3,10 +3,17 @@
 
 #include "Client_Parameters.hpp"
 #include "Array.hpp"
+#include "Hash_Table.hpp"
+#include "String_Utils.hpp"
+
+using namespace Types;
+using namespace String;
 
 class Client {
 public:
-    Client() = default;
+    Client() = delete;
+
+    Client(int argc, char **argv);
 
     Client(const Client &client) = delete;
 
@@ -16,22 +23,28 @@ public:
 
     Client &operator=(Client &&client) = delete;
 
-    Client(int argc, char **argv);
 
     ~Client() = default;
 
     void Start();
 
 private:
+    using Table = Hash_Table<char *, bool, string_hash, equal_string>;
+
     Client_Parameters ParseClientParameters(int argc, char **argv);
 
     void ValidateParameters(Client_Parameters &program_arguments);
 
     void CreateIDFile();
 
-    int argc_;
+    Array<char *> GetNewClients(const char *path);
+
+    Table clients_map_{17};
+    Client_Parameters arguments_{};
     char **argv_;
-    Client_Parameters arguments_;
+    int argc_;
+    const unsigned int sleep_period_{1};
+    bool stop_{false};
 };
 
 
