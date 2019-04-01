@@ -40,3 +40,5 @@ test*
 common_dir/
 input_dir/
 mirror_dir/
+Receiver
+Sender

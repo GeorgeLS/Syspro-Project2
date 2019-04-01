@@ -2,8 +2,8 @@
 #define EXERCISE_II_ARRAY_HPP
 
 #include <cstddef>
-#include <type_traits>
 #include <initializer_list>
+#include <algorithm>
 #include "Memory_Utils.hpp"
 
 using namespace Utils;
@@ -50,6 +50,11 @@ namespace Types {
             return array_[index];
         }
 
+        void Reserve(size_t elements) {
+            array_ = Memory::malloc<T>(elements);
+            elements_n_ = elements;
+        }
+
         [[gnu::always_inline]]
         inline T *C_Array() const {
             return array_;
@@ -68,7 +73,7 @@ namespace Types {
         void Construct(const Array<T> &array) {
             elements_n_ = array.elements_n_;
             array_ = Memory::malloc<T>(elements_n_);
-            Memory::CopyAndConstruct(array, array.array_, elements_n_);
+            Memory::CopyAndConstruct(array_, array.array_, elements_n_);
             // The thing is that if we could use C++17 we could optimize this further
             // but University is stuck to gcc 5.4 for some reason...
 //            if constexpr (std::is_trivially_copy_constructible<T>::value) {

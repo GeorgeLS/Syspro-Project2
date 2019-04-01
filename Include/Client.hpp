@@ -23,29 +23,20 @@ public:
 
     Client &operator=(Client &&client) = delete;
 
-
-    ~Client() = default;
+    ~Client();
 
     void Start();
 
 private:
+    void SpawnProcesses(const char *client);
+
     using Table = Hash_Table<char *, bool, string_hash, equal_string>;
-
-    Client_Parameters ParseClientParameters(int argc, char **argv);
-
-    void ValidateParameters(Client_Parameters &program_arguments);
-
-    void CreateIDFile();
-
-    Array<char *> GetNewClients(const char *path);
 
     Table clients_map_{17};
     Client_Parameters arguments_{};
-    char **argv_;
-    int argc_;
+    Array<char *> arguments_array_{};
     const unsigned int sleep_period_{1};
-    bool stop_{false};
+    bool stop_{};
 };
-
 
 #endif //EXERCISE_II_CLIENT_HPP

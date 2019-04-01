@@ -29,14 +29,13 @@ struct Client_Parameters {
 
     ~Client_Parameters() = default;
 
-    uint64_t id;
-    const char *common_dir;
-    const char *input_dir;
-    const char *mirror_dir;
-    size_t buffer_size;
-    const char *log_file;
+    uint64_t id{};
+    const char *common_dir{};
+    const char *input_dir{};
+    const char *mirror_dir{};
+    size_t buffer_size{};
+    const char *log_file{};
+    size_t arguments_n{12U};
 };
-
-extern Client_Parameters arguments;
 
 #endif //EXERCISE_II_PROGRAM_ARGUMENTS_HPP
