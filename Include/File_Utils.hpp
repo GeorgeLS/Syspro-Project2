@@ -24,6 +24,14 @@ namespace Utils::File {
      * @return The number of regular files in the directory on success, -1 on false
      */
     ssize_t CountReguralFilesInDirectory(const char *path);
+
+    /**
+     * GetFileSize - Gets the size of the specified file
+     * @param filename The file to get it's size
+     * @return On success returns the size of the file,
+     * On failure returns -1
+     */
+    ssize_t GetFileSize(const char *filename);
 }
 
 #endif //EXERCISE_II_FILE_UTILS_HPP

@@ -30,12 +30,12 @@ namespace Utils::client {
     void CreateIDFile(Client_Parameters &parameters);
 
     /**
-     * GetClients - Returns an array of strings of all the client filenames in the common directory
-     * @param path The path to search for the client files
-     * @return On success returns an array of the client filenames,
+     * GetRegularFiles - Returns an array of strings of all the regular files in the directory
+     * @param path The path to search for the files
+     * @return On success returns an array of the regular files,
      * On failure returns an empty array
      */
-    Array<char *> GetClients(const char *path);
+    Array<char *> GetRegularFiles(const char *path);
 
     /**
      * GetClientID - Parses the client_filename and returns a newly allocated string containing only the id of the client

@@ -32,3 +32,9 @@ ssize_t Utils::File::CountReguralFilesInDirectory(const char *path) {
     closedir(dirp);
     return count;
 }
+
+ssize_t Utils::File::GetFileSize(const char *filename) {
+    struct stat info{};
+    if (stat(filename, &info) == -1) return -1;
+    return info.st_size;
+}

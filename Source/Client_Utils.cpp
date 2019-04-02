@@ -90,22 +90,22 @@ void client::CreateIDFile(Client_Parameters &parameters) {
     close(fd);
 }
 
-Array<char *> client::GetClients(const char *path) {
+Array<char *> client::GetRegularFiles(const char *path) {
     ssize_t file_n = Utils::File::CountReguralFilesInDirectory(path);
     if (file_n == -1) {
         return Array<char *>{};
     }
     DIR *dirp = opendir(path);
     struct dirent *entry;
-    Array<char *> clients{static_cast<size_t>(file_n)};
+    Array<char *> files{static_cast<size_t>(file_n)};
     size_t i = 0U;
     while ((entry = readdir(dirp)) != NULL) {
         if (entry->d_type == DT_REG) {
-            clients[i++] = AllocateAndCopyString(entry->d_name);
+            files[i++] = AllocateAndCopyString(entry->d_name);
         }
     }
     closedir(dirp);
-    return clients;
+    return files;
 }
 
 char *client::GetClientID(const char *client_filename) {

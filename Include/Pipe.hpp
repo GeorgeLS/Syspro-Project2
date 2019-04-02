@@ -7,6 +7,7 @@
 using namespace Types;
 
 namespace Wrappers {
+    // TODO (gliontos): Extend this so we can set timeouts
     class Pipe {
     public:
         enum Mode {
@@ -27,23 +28,48 @@ namespace Wrappers {
 
         Pipe &operator=(Pipe &&other) = delete;
 
-        Pipe &operator<<(const char *str);
+        template<typename T>
+        Pipe &Write(const T &data) {
+            write(fd_, &data, sizeof(T));
+            return *this;
+        }
 
-        Pipe &operator<<(unsigned long v);
+        Pipe &Write(void *data, size_t bytes) {
+            write(fd_, data, bytes);
+            return *this;
+        }
 
-        Pipe &operator>>(Array<char> &buffer);
+        ssize_t Read(size_t bytes) {
+            memset(buffer_.C_Array(), '\0', buffer_.Size());
+            if (bytes > buffer_.Size()) {
+                bytes = buffer_.Size();
+            }
+            return read(fd_, buffer_.C_Array(), bytes);
+        }
 
-        Pipe &operator>>(unsigned long &v);
+        Pipe &operator<<(const char *str) {
+            return Write((void *) str, strlen(str));
+        }
+
+        template<typename T, typename std::enable_if_t<std::is_integral_v<T>, bool> = true>
+        Pipe &operator<<(const T &value) { return Write(value); }
+
+        template<typename T, typename std::enable_if_t<std::is_integral_v<T>, bool> = true>
+        Pipe &operator>>(const T &value) {
+            read(fd_, (void *) &value, sizeof(T));
+            return *this;
+        }
+
+        Pipe &operator>>(Array<char> &buffer) {
+            read(fd_, buffer.C_Array(), buffer.Size());
+            return *this;
+        }
 
         ~Pipe();
 
         bool Open(Mode mode);
 
         bool Close();
-
-        void Read(size_t bytes);
-
-        void Write(void *data, size_t bytes);
 
         inline Array<char> &Buffer() { return buffer_; }
 

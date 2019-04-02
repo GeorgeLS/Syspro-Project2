@@ -22,7 +22,7 @@ Client::Client(int argc, char **argv)
 }
 
 Client::~Client() {
-    system("rm -rf common_dir/1.id mirror_dir");
+//    system("rm -rf common_dir/1.id mirror_dir");
 }
 
 void Client::Start() {
@@ -32,7 +32,7 @@ void Client::Start() {
     clients_map_[id_file] = true;
     while (!stop_) {
         sleep(sleep_period_);
-        Array<char *> clients = GetClients(arguments_.common_dir);
+        Array<char *> clients = GetRegularFiles(arguments_.common_dir);
         if (clients.Size() != 0) {
             for (size_t i = 0U; i != clients.Size(); ++i) {
                 char *client = clients[i];
