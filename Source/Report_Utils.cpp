@@ -24,3 +24,11 @@ void Utils::Report::Die(const char *fmt, ...) {
     ReportError(fmt, args);
     exit(EXIT_FAILURE);
 }
+
+void Utils::Report::FileReport(int fd, const char *fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    vdprintf(fd, fmt, args);
+    dprintf(fd, "\n");
+    va_end(args);
+}

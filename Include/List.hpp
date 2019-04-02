@@ -17,20 +17,23 @@ namespace Types {
 
             T data_;
             Node *next_;
+            Node *previous_;
         };
 
-        struct ForwardIterator {
-            ForwardIterator() = default;
+        struct BidirectionalIterator {
+            BidirectionalIterator() = default;
 
-            ForwardIterator(Node *node);
+            BidirectionalIterator(Node *node);
 
-            ~ForwardIterator() = default;
+            ~BidirectionalIterator() = default;
 
-            ForwardIterator &operator++();
+            BidirectionalIterator &operator++();
 
-            bool operator==(const ForwardIterator &other) const;
+            BidirectionalIterator &operator--();
 
-            bool operator!=(const ForwardIterator &other) const;
+            bool operator==(const BidirectionalIterator &other) const;
+
+            bool operator!=(const BidirectionalIterator &other) const;
 
             T &operator*() const;
 
@@ -41,7 +44,7 @@ namespace Types {
         };
 
     public:
-        using iterator = ForwardIterator;
+        using iterator = BidirectionalIterator;
 
         List();
 
@@ -62,6 +65,8 @@ namespace Types {
         void Add_Front(T &data);
 
         void Add_Back(T &data);
+
+        void Remove(iterator &position);
 
         inline T &First() const;
 
@@ -85,39 +90,45 @@ namespace Types {
 
     template<typename T>
     List<T>::Node::Node()
-            : data_{}, next_{nullptr} {}
+            : data_{}, next_{nullptr}, previous_{nullptr} {}
 
     template<typename T>
     List<T>::Node::Node(T &data)
-            : data_{data}, next_{nullptr} {}
+            : data_{data}, next_{nullptr}, previous_{nullptr} {}
 
     template<typename T>
-    List<T>::ForwardIterator::ForwardIterator(Node *node)
+    List<T>::BidirectionalIterator::BidirectionalIterator(Node *node)
             : node_{node} {}
 
     template<typename T>
-    typename List<T>::ForwardIterator &List<T>::ForwardIterator::operator++() {
+    typename List<T>::BidirectionalIterator &List<T>::BidirectionalIterator::operator++() {
         node_ = node_->next_;
         return *this;
     }
 
     template<typename T>
-    bool List<T>::ForwardIterator::operator==(const ForwardIterator &other) const {
+    typename List<T>::BidirectionalIterator &List<T>::BidirectionalIterator::operator--() {
+        node_ = node_->previous_;
+        return *this;
+    }
+
+    template<typename T>
+    bool List<T>::BidirectionalIterator::operator==(const BidirectionalIterator &other) const {
         return node_ == other.node_;
     }
 
     template<typename T>
-    bool List<T>::ForwardIterator::operator!=(const List::ForwardIterator &other) const {
+    bool List<T>::BidirectionalIterator::operator!=(const List::BidirectionalIterator &other) const {
         return node_ != other.node_;
     }
 
     template<typename T>
-    T &List<T>::ForwardIterator::operator*() const {
+    T &List<T>::BidirectionalIterator::operator*() const {
         return node_->data_;
     }
 
     template<typename T>
-    T &List<T>::ForwardIterator::operator->() const {
+    T &List<T>::BidirectionalIterator::operator->() const {
         return node_->data_;
     }
 
@@ -134,11 +145,12 @@ namespace Types {
     void List<T>::Add_Front(T &data) {
         Node *node_ = Utils::Memory::malloc<Node>(1);
         new(node_) Node{data};
-        if (size_ == 0U) {
-            head_ = tail_ = node_;
-        } else {
+        if (size_) {
             node_->next_ = head_;
+            head_->previous_ = node_;
             head_ = node_;
+        } else {
+            head_ = tail_ = node_;
         }
         ++size_;
     }
@@ -147,13 +159,34 @@ namespace Types {
     void List<T>::Add_Back(T &data) {
         Node *node_ = Utils::Memory::malloc<Node>(1);
         new(node_) Node{data};
-        if (size_ == 0U) {
-            head_ = tail_ = node_;
-        } else {
+        if (size_) {
+            node_->previous_ = tail_;
             tail_->next_ = node_;
             tail_ = node_;
+        } else {
+            head_ = tail_ = node_;
         }
         ++size_;
+    }
+
+    template<typename T>
+    void List<T>::Remove(List::iterator &position) {
+        Node *node = position.node_;
+        if (size_ == 1) {
+            head_ = tail_ = nullptr;
+        } else if (position == Begin()) {
+            node->next_->previous_ = nullptr;
+            head_ = node->next_;
+        } else if (position == End()) {
+            node->previous_->next_ = nullptr;
+            tail_ = node->previous_;
+        } else {
+            node->previous_->next_ = node->next_;
+            node->next_->previous_ = node->previous_;
+        }
+        --size_;
+        node->~Node();
+        free(node);
     }
 
     template<typename T>
@@ -163,12 +196,12 @@ namespace Types {
 
     template<typename T>
     typename List<T>::iterator List<T>::Begin() {
-        return ForwardIterator{head_};
+        return BidirectionalIterator{head_};
     }
 
     template<typename T>
     typename List<T>::iterator List<T>::End() {
-        return ForwardIterator{nullptr};
+        return BidirectionalIterator{nullptr};
     }
 
     template<typename T>
@@ -184,7 +217,8 @@ namespace Types {
     }
 
     template<typename T>
-    List<T>::List(const List<T> &other) {
+    List<T>::List(const List<T> &other)
+            : size_{0U} {
         Construct(other);
     }
 
@@ -194,7 +228,7 @@ namespace Types {
         while (curr != nullptr) {
             Node *tmp = curr;
             curr = curr->next_;
-            tmp->data_.~T();
+            tmp->~Node();
             free(tmp);
         }
     }

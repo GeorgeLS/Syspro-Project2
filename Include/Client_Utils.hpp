@@ -30,6 +30,12 @@ namespace Utils::client {
     void CreateIDFile(Client_Parameters &parameters);
 
     /**
+     * CreateLogFile - Creates the log file for this client
+     * @param filename The log filename
+     */
+    void CreateLogFile(const char *filename);
+
+    /**
      * GetRegularFiles - Returns an array of strings of all the regular files in the directory
      * @param path The path to search for the files
      * @return On success returns an array of the regular files,

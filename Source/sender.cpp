@@ -51,7 +51,6 @@ int main(int argc, char **argv) {
         while ((bytes_read = read(fd, file_buffer.C_Array(), file_buffer.Size())) != 0) {
             char *contents = file_buffer.C_Array();
             contents[bytes_read] = '\0';
-            std::cout << "Read: " << contents << std::endl;
             pipe << contents;
         }
         close(fd);

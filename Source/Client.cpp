@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cinttypes>
 #include <wait.h>
+#include <fcntl.h>
 #include "../Include/Client.hpp"
 #include "../Include/Client_Utils.hpp"
 #include "../Include/Process.hpp"
@@ -22,10 +23,11 @@ Client::Client(int argc, char **argv)
 }
 
 Client::~Client() {
-//    system("rm -rf common_dir/1.id mirror_dir");
+//    system("rm -rf common/1.id mirror_dir");
 }
 
 void Client::Start() {
+    CreateLogFile(arguments_.log_file);
     CreateIDFile(arguments_);
     char *id_file;
     asprintf(&id_file, "%" PRIu64 ".id", arguments_.id);
@@ -39,16 +41,11 @@ void Client::Start() {
                 if (!clients_map_.Contains(client)) {
                     clients_map_[client] = true;
                     SpawnProcesses(client);
+                } else {
+                    free(client);
                 }
-                free(client);
             }
         }
-        stop_ = true;
-    }
-    for (size_t i = 0U; i != 2U; ++i) {
-        int status;
-        pid_t pid = wait(&status);
-        std::cout << "[Parent] PID: " << pid << std::endl;
     }
     free(id_file);
 }

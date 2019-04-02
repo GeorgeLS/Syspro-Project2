@@ -31,14 +31,16 @@
 *.out
 *.app
 
-# Clion
+# Clion / Project
 .idea/
 cmake-build-debug/
 CMakeLists.txt
 hw2-spring-2019.pdf
 test*
-common_dir/
-input_dir/
-mirror_dir/
+common/
+*input/
+*mirror/
 Receiver
 Sender
+Exercise_II
+*.sh

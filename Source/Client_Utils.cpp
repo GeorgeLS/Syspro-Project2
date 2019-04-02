@@ -80,7 +80,7 @@ void client::CreateIDFile(Client_Parameters &parameters) {
     if (FileExists(file_path)) {
         Die("The ID file for this client already exists!");
     }
-    int fd = open(file_path, O_CREAT | O_WRONLY);
+    int fd = open(file_path, O_CREAT | O_WRONLY, 0777);
     if (fd == -1) {
         Die("Couldn't create ID file for client %" PRIu64 "!", parameters.id);
     }
@@ -114,4 +114,12 @@ char *client::GetClientID(const char *client_filename) {
     while (id[i] != '.') --i;
     id[i] = '\0';
     return id;
+}
+
+void client::CreateLogFile(const char *filename) {
+    int fd = creat(filename, 0777);
+    if (fd == -1) {
+        Die("Couldn't create log file <%s>. Terminating!", filename);
+    }
+    close(fd);
 }

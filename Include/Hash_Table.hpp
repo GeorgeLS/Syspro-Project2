@@ -31,6 +31,8 @@ namespace Types {
 
         V &Insert(K &&key, V &&value);
 
+        void Remove(const K &key);
+
         V &operator[](const K &key);
 
         V &operator[](K &&key);
@@ -90,6 +92,18 @@ namespace Types {
             if (comparer_((*it).first, key)) return &(*it).second;
         }
         return nullptr;
+    }
+
+    template<typename K, typename V, typename H, typename E>
+    void Hash_Table<K, V, H, E>::Remove(const K &key) {
+        size_t bucket = hasher_(key) % table_.Size();
+        auto &bucket_list = table_[bucket];
+        for (auto it = bucket_list.Begin(); it != bucket_list.End(); ++it) {
+            if (comparer_((*it).first, key)) {
+                bucket_list.Remove(it);
+                break;
+            }
+        }
     }
 }
 

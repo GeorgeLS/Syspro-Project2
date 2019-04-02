@@ -20,6 +20,15 @@ namespace Utils::Report {
     void ReportError(const char *fmt, va_list args);
 
     /**
+     * FileReport - Report the given message to a file designated by the file descriptor
+     * @param fd The file descriptor
+     * @param fmt The string to print. It can include format specifiers
+     * @param ... The rest of the arguments in the form of va_list. These are provided in case the fmt string provided has format specifiers
+     */
+    [[gnu::format(printf, 2, 3)]]
+    void FileReport(int fd, const char *fmt, ...);
+
+    /**
      * Die - Prints an error message to stderr and terminates the program with EXIT_FAILURE
      * @param fmt The string to print. It can include format specifiers
      * @param ... The rest of the arguments. These are provided in case the fmt string provided has format specifiers
