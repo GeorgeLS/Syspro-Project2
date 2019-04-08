@@ -38,9 +38,10 @@ CMakeLists.txt
 hw2-spring-2019.pdf
 test*
 common/
-*input/
 *mirror/
+inputs/
+Client
 Receiver
 Sender
-Exercise_II
-*.sh
+Cleaner
+*.tar.gz

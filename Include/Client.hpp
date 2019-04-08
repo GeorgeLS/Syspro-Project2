@@ -41,7 +41,11 @@ private:
 
     void WaitAllChildren();
 
-    using ClientTable = Hash_Table<char *, uint, string_hash, equal_string>;
+    void ResetClientMarks();
+
+    void CleanupDeletedClients();
+
+    using ClientTable = Hash_Table<char *, std::pair<uint, bool>, string_hash, equal_string>;
 
     using ProcessTable = Hash_Table<pid_t, ClientProcessInfo>;
 

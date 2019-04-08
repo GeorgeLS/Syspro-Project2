@@ -4,8 +4,10 @@
 struct ClientProcessInfo {
     enum Profile {
         Sender,
-        Receiver
+        Receiver,
+        Cleaner
     };
+    
     char *clientID_;
     Profile profile_;
 };

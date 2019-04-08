@@ -81,3 +81,28 @@ bool Utils::File::CreateDirectory(char *path, mode_t permissions) {
     free(start);
     return result;
 }
+
+void Utils::File::DeleteDirectory(const char *path) {
+    char path_buffer[2048];
+    DIR *dir = opendir(path);
+    if (dir == NULL) {
+        return;
+    }
+	
+    struct dirent *entry;
+    while ((entry = readdir(dir)) != NULL) {
+        if (strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0) {
+            strcpy(path_buffer, path);
+            strcat(path_buffer, "/");
+            strcat(path_buffer, entry->d_name);
+			
+            if (entry->d_type == DT_REG) {
+                remove(path_buffer);
+            } else {
+                DeleteDirectory(path_buffer);
+            }
+        }
+    }
+    remove(path);
+    closedir(dir);
+}

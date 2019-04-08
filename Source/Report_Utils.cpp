@@ -1,4 +1,6 @@
 #include <iostream>
+#include <unistd.h>
+#include <cstring>
 #include "../Include/Report_Utils.hpp"
 
 static void __Report(const char *tag, const char *fmt, va_list args) {
@@ -28,15 +30,17 @@ void Utils::Report::Die(const char *fmt, ...) {
 }
 
 void Utils::Report::FileReport(int fd, const char *fmt, ...) {
-    va_list args;
-    va_start(args, fmt);
-    vdprintf(fd, fmt, args);
-    dprintf(fd, "\n");
-    va_end(args);
+	va_list args;
+	va_start(args, fmt);
+	char *contents;
+	vasprintf(&contents, fmt, args);
+	write(fd, contents, strlen(contents));
+	va_end(args);
+	free(contents);
 }
 
 void Utils::Report::ReportMessage(const char *fmt, ...) {
-    va_list args;
-    va_start(args, fmt);
-    __Report(NULL, fmt, args);
+	va_list args;
+	va_start(args, fmt);
+	__Report(NULL, fmt, args);
 }

@@ -53,6 +53,13 @@ namespace Utils::File {
      * i.e george/ , george/john/
      */
     bool CreateDirectory(char *path, mode_t permissions = ACCESSPERMS);
+
+    /**
+     * DeleteDirectory - Deletes the directory specified by the given path. If the directory is not empty then
+     * it deletes everything recursively
+     * @param path The path to the directory to delete
+     */
+    void DeleteDirectory(const char *path);
 }
 
 #endif //EXERCISE_II_FILE_UTILS_HPP
