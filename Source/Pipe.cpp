@@ -2,6 +2,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <iostream>
+#include <poll.h>
 #include "../Include/Pipe.hpp"
 #include "../Include/String_Utils.hpp"
 #include "../Include/File_Utils.hpp"
@@ -30,4 +31,8 @@ bool Wrappers::Pipe::Close() {
     if (unlink(path_) == -1) return false;
     fd_ = -1;
     return true;
+}
+
+void Wrappers::Pipe::SetTimeout(int seconds) {
+    timeout_ = seconds * 1000U;
 }

@@ -1,6 +1,7 @@
 #ifndef EXERCISE_II_STRING_UTILS_HPP
 #define EXERCISE_II_STRING_UTILS_HPP
 
+#include <cstring>
 #include <cstdint>
 
 namespace Utils::String {

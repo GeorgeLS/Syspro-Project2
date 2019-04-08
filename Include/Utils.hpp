@@ -4,6 +4,9 @@
 #include "Client_Parameters.hpp"
 #include "Report_Utils.hpp"
 
+#define FOREACH(iterable) \
+    for (auto it = iterable.Begin(); it != iterable.End(); ++it)
+
 namespace Utils {
     /**
      * Usage - Prints the usage of the program

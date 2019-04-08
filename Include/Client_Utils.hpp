@@ -1,8 +1,10 @@
 #ifndef EXERCISE_II_CLIENT_UTILS_HPP
 #define EXERCISE_II_CLIENT_UTILS_HPP
 
+#include <csignal>
 #include "Client_Parameters.hpp"
 #include "../Include/Array.hpp"
+#include "List.hpp"
 
 using namespace Types;
 
@@ -38,10 +40,14 @@ namespace Utils::client {
     /**
      * GetRegularFiles - Returns an array of strings of all the regular files in the directory
      * @param path The path to search for the files
+     * @param full_path If full_path is specified as true then the path provided will be
+     * appended to the filename. Default value is false
      * @return On success returns an array of the regular files,
      * On failure returns an empty array
      */
-    Array<char *> GetRegularFiles(const char *path);
+    Array<char *> GetRegularFiles(const char *path, bool full_path = false);
+
+    void GetRegularFilesRecursively(const char *path, List<char *> &result);
 
     /**
      * GetClientID - Parses the client_filename and returns a newly allocated string containing only the id of the client
@@ -49,6 +55,14 @@ namespace Utils::client {
      * @return A newly allocated string containing the id of the client
      */
     char *GetClientID(const char *client_filename);
+
+    /**
+     * HandleSignal - When a signal is received it calls the proper function of the client (global_client)
+     * @param signum The signal number received
+     * @param info The signal information
+     * @param context A pointer to ucontext_t structure passed as void *. We don't use it
+     */
+    void HandleSignal(int signum, siginfo_t *info, void *context);
 }
 
 #endif //EXERCISE_II_CLIENT_UTILS_HPP

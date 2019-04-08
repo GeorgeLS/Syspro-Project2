@@ -39,7 +39,6 @@ namespace Types {
 
             T &operator->() const;
 
-        private:
             Node *node_;
         };
 
@@ -47,6 +46,8 @@ namespace Types {
         using iterator = BidirectionalIterator;
 
         List();
+
+        List(std::initializer_list<T> list);
 
         List(const List<T> &list);
 
@@ -60,13 +61,23 @@ namespace Types {
 
         inline iterator Begin();
 
+        inline const iterator Begin() const;
+
+        inline const iterator End() const;
+
         inline iterator End();
 
         void Add_Front(T &data);
 
+        void Add_Front(T &&data);
+
         void Add_Back(T &data);
 
-        void Remove(iterator &position);
+        void Add_Back(T &&data);
+
+        void Remove(const iterator &position);
+
+        void Clear();
 
         inline T &First() const;
 
@@ -80,6 +91,8 @@ namespace Types {
         void Construct(const List<T> &other);
 
         void Move(List<T> &&other);
+
+        void RemoveAt(iterator &position);
 
         void Destroy();
 
@@ -133,6 +146,37 @@ namespace Types {
     }
 
     template<typename T>
+    void List<T>::Construct(const List<T> &other) {
+        Construct(other.Begin(), other.End());
+    }
+
+    template<typename T>
+    void List<T>::Construct(const List::iterator &begin, const List::iterator &end) {
+        for (auto it = begin; it != end; ++it) {
+            Add_Back(*it);
+        }
+    }
+
+    template<typename T>
+    void List<T>::Move(List<T> &&other) {
+        std::swap(head_, other.head_);
+        std::swap(tail_, other.tail_);
+        std::swap(size_, other.size_);
+    }
+
+    template<typename T>
+    void List<T>::Destroy() {
+        Node *curr = head_;
+        while (curr != nullptr) {
+            Node *tmp = curr;
+            curr = curr->next_;
+            tmp->~Node();
+            free(tmp);
+        }
+        head_ = tail_ = nullptr;
+    }
+
+    template<typename T>
     List<T>::List()
             : head_{nullptr}, tail_{nullptr}, size_{0U} {}
 
@@ -142,7 +186,90 @@ namespace Types {
     }
 
     template<typename T>
+    List<T>::List(std::initializer_list<T> list)
+            :size_{0U} {
+        for (auto it = list.begin(); it != list.end(); ++it) {
+            Add_Back(const_cast<T &>(*it));
+        }
+    }
+
+    template<typename T>
+    List<T>::List(const List<T> &other)
+            : size_{0U} {
+        Construct(other);
+    }
+
+    template<typename T>
+    List<T>::List(List<T> &&other) noexcept
+            : head_{nullptr}, tail_{nullptr}, size_{0U} {
+        Move(other);
+    }
+
+    template<typename T>
+    List<T> &List<T>::operator=(const List<T> &other) {
+        Destroy();
+        Construct(other);
+        return *this;
+    }
+
+    template<typename T>
+    List<T> &List<T>::operator=(List<T> &&other) noexcept {
+        Move(other);
+        return *this;
+    }
+
+    template<typename T>
+    typename List<T>::iterator List<T>::Begin() {
+        return BidirectionalIterator{head_};
+    }
+
+    template<typename T>
+    const typename List<T>::iterator List<T>::Begin() const {
+        return BidirectionalIterator{head_};
+    }
+
+
+    template<typename T>
+    typename List<T>::iterator List<T>::End() {
+        return BidirectionalIterator{nullptr};
+    }
+
+    template<typename T>
+    const typename List<T>::iterator List<T>::End() const {
+        return BidirectionalIterator{nullptr};
+    }
+
+    template<typename T>
+    T &List<T>::First() const {
+        return head_->data_;
+    }
+
+    template<typename T>
+    T &List<T>::Last() const {
+        return tail_->data_;
+    }
+
+    template<typename T>
+    size_t List<T>::Size() const {
+        return size_;
+    }
+
+    template<typename T>
     void List<T>::Add_Front(T &data) {
+        Node *node_ = Utils::Memory::malloc<Node>(1);
+        new(node_) Node{data};
+        if (size_) {
+            node_->next_ = head_;
+            head_->previous_ = node_;
+            head_ = node_;
+        } else {
+            head_ = tail_ = node_;
+        }
+        ++size_;
+    }
+
+    template<typename T>
+    void List<T>::Add_Front(T &&data) {
         Node *node_ = Utils::Memory::malloc<Node>(1);
         new(node_) Node{data};
         if (size_) {
@@ -170,7 +297,31 @@ namespace Types {
     }
 
     template<typename T>
-    void List<T>::Remove(List::iterator &position) {
+    void List<T>::Add_Back(T &&data) {
+        Node *node_ = Utils::Memory::malloc<Node>(1);
+        new(node_) Node{data};
+        if (size_) {
+            node_->previous_ = tail_;
+            tail_->next_ = node_;
+            tail_ = node_;
+        } else {
+            head_ = tail_ = node_;
+        }
+        ++size_;
+    }
+
+    template<typename T>
+    void List<T>::Remove(const List::iterator &position) {
+        RemoveAt(const_cast<List::iterator &>(position));
+    }
+
+    template<typename T>
+    void List<T>::Clear() {
+        Destroy();
+    }
+
+    template<typename T>
+    void List<T>::RemoveAt(iterator &position) {
         Node *node = position.node_;
         if (size_ == 1) {
             head_ = tail_ = nullptr;
@@ -187,86 +338,6 @@ namespace Types {
         --size_;
         node->~Node();
         free(node);
-    }
-
-    template<typename T>
-    size_t List<T>::Size() const {
-        return size_;
-    }
-
-    template<typename T>
-    typename List<T>::iterator List<T>::Begin() {
-        return BidirectionalIterator{head_};
-    }
-
-    template<typename T>
-    typename List<T>::iterator List<T>::End() {
-        return BidirectionalIterator{nullptr};
-    }
-
-    template<typename T>
-    void List<T>::Construct(const List<T> &other) {
-        Construct(other.Begin(), other.End());
-    }
-
-    template<typename T>
-    void List<T>::Construct(const List::iterator &begin, const List::iterator &end) {
-        for (auto it = begin; it != end; ++it) {
-            Add_Back(*it);
-        }
-    }
-
-    template<typename T>
-    List<T>::List(const List<T> &other)
-            : size_{0U} {
-        Construct(other);
-    }
-
-    template<typename T>
-    void List<T>::Destroy() {
-        Node *curr = head_;
-        while (curr != nullptr) {
-            Node *tmp = curr;
-            curr = curr->next_;
-            tmp->~Node();
-            free(tmp);
-        }
-    }
-
-    template<typename T>
-    List<T> &List<T>::operator=(const List<T> &other) {
-        Destroy();
-        Construct(other);
-        return *this;
-    }
-
-    template<typename T>
-    T &List<T>::First() const {
-        return head_->data_;
-    }
-
-    template<typename T>
-    T &List<T>::Last() const {
-        return tail_->data_;
-    }
-
-    template<typename T>
-    List<T>::List(List<T> &&other) noexcept
-            : head_{nullptr}, tail_{nullptr}, size_{0U} {
-        Move(other);
-    }
-
-    template<typename T>
-    List<T> &List<T>::operator=(List<T> &&other) noexcept {
-        Move(other);
-        return *this;
-    }
-
-    template<typename T>
-    void List<T>::Move(List<T> &&other) {
-        std::swap(head_, other.head_);
-        std::swap(tail_, other.tail_);
-        std::swap(size_, other.size_);
     }
 }
 

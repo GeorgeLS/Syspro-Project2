@@ -2,7 +2,9 @@
 #include "../Include/Report_Utils.hpp"
 
 static void __Report(const char *tag, const char *fmt, va_list args) {
-    fprintf(stderr, "%s", tag);
+    if (tag) {
+        fprintf(stderr, "%s", tag);
+    }
     vfprintf(stderr, fmt, args);
     fputc('\n', stderr);
     va_end(args);
@@ -31,4 +33,10 @@ void Utils::Report::FileReport(int fd, const char *fmt, ...) {
     vdprintf(fd, fmt, args);
     dprintf(fd, "\n");
     va_end(args);
+}
+
+void Utils::Report::ReportMessage(const char *fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    __Report(NULL, fmt, args);
 }

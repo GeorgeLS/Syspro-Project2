@@ -28,6 +28,9 @@ namespace Utils::Report {
     [[gnu::format(printf, 2, 3)]]
     void FileReport(int fd, const char *fmt, ...);
 
+    [[gnu::format(printf, 1, 2)]]
+    void ReportMessage(const char *fmt, ...);
+
     /**
      * Die - Prints an error message to stderr and terminates the program with EXIT_FAILURE
      * @param fmt The string to print. It can include format specifiers

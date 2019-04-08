@@ -25,6 +25,12 @@ namespace Types {
 
         ~Hash_Table() = default;
 
+        size_t Buckets() const;
+
+        const List<std::pair<K, V>> &ListAt(size_t bucket) const;
+
+        List<std::pair<K, V>> &ListAt(size_t bucket);
+
         bool Contains(const K &key);
 
         V &Insert(const K &key, const V &value);
@@ -48,6 +54,21 @@ namespace Types {
     template<typename K, typename V, typename H, typename E>
     Hash_Table<K, V, H, E>::Hash_Table(size_t buckets)
             : table_{buckets} {}
+
+    template<typename K, typename V, typename H, typename E>
+    size_t Hash_Table<K, V, H, E>::Buckets() const {
+        return table_.Size();
+    }
+
+    template<typename K, typename V, typename H, typename E>
+    List<std::pair<K, V>> &Hash_Table<K, V, H, E>::ListAt(size_t bucket) {
+        return table_[bucket];
+    }
+
+    template<typename K, typename V, typename H, typename E>
+    const List<std::pair<K, V>> &Hash_Table<K, V, H, E>::ListAt(size_t bucket) const {
+        return table_[bucket];
+    }
 
     template<typename K, typename V, typename H, typename E>
     bool Hash_Table<K, V, H, E>::Contains(const K &key) {

@@ -2,11 +2,13 @@
 #include <cinttypes>
 #include <iostream>
 #include <unistd.h>
+#include <signal.h>
 #include "../Include/Pipe.hpp"
 #include "../Include/Client_Parameters.hpp"
 #include "../Include/Client_Utils.hpp"
 #include "../Include/String_Utils.hpp"
 #include "../Include/File_Utils.hpp"
+#include "../Include/Utils.hpp"
 
 using namespace client;
 using namespace Wrappers;
@@ -15,8 +17,7 @@ using namespace File;
 
 int main(int argc, char **argv) {
     Client_Parameters arguments = ParseClientParameters(argc, argv);
-    char *receiver_id_file = argv[argc - 1];
-    char *receiver_id = GetClientID(receiver_id_file);
+    char *receiver_id = GetClientID(argv[argc - 2]);
     char *pipe_name;
     asprintf(&pipe_name, "%s/id%" PRIu64 "_to_id%s.fifo",
              arguments.common_dir, arguments.id, receiver_id);
@@ -28,14 +29,17 @@ int main(int argc, char **argv) {
         Die("Couldn't open the pipe <%s>. Terminating!", pipe.Name());
     }
 
-    Array<char *> input_files = GetRegularFiles(arguments.input_dir);
-    Array<char> file_buffer{static_cast<char>(arguments.buffer_size)};
+    List<char *> input_files{};
+    GetRegularFilesRecursively(arguments.input_dir, input_files);
 
-    for (size_t i = 0U; i != input_files.Size(); ++i) {
-        char *filename = input_files[i];
-        uint16_t filename_length = strlen(filename);
-        char *full_path_filename;
-        asprintf(&full_path_filename, "%s/%s", arguments.input_dir, filename);
+    Array<char> file_buffer(arguments.buffer_size);
+
+    size_t input_dir_length = strlen(arguments.input_dir) + 1;
+
+    FOREACH (input_files) {
+        char *full_path_filename = *it;
+        // Get the length of the filename without the length of the input directory
+        uint16_t filename_length = strlen(full_path_filename) - input_dir_length;
         uint32_t file_size = GetFileSize(full_path_filename);
         if (file_size == -1) {
             ReportError("Couldn't get the file size of file <%s>", full_path_filename);
@@ -46,7 +50,7 @@ int main(int argc, char **argv) {
             ReportError("Couldn't open the file <%s>", full_path_filename);
             goto __LOOP_END__;
         }
-        pipe << filename_length << filename << file_size;
+        pipe << filename_length << (full_path_filename + input_dir_length) << file_size;
         size_t bytes_read;
         while ((bytes_read = read(fd, file_buffer.C_Array(), file_buffer.Size())) != 0) {
             char *contents = file_buffer.C_Array();

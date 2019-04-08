@@ -1,5 +1,6 @@
 #include <cinttypes>
 #include <sys/stat.h>
+#include <signal.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <cstdio>
@@ -8,9 +9,12 @@
 #include "../Include/String_Utils.hpp"
 #include "../Include/File_Utils.hpp"
 #include "../Include/Utils.hpp"
+#include "../Include/Client.hpp"
 
 using namespace String;
 using namespace File;
+
+Client *global_client;
 
 Client_Parameters client::ParseClientParameters(int argc, char **argv) {
     int c;
@@ -70,7 +74,7 @@ void client::ValidateParameters(Client_Parameters &parameters) {
         mkdir(parameters.mirror_dir, S_IRWXU);
     }
     if (!FileExists(parameters.common_dir)) {
-        mkdir(parameters.common_dir, S_IRWXU | S_IRWXG | S_IRWXO);
+        mkdir(parameters.common_dir, ACCESSPERMS);
     }
 }
 
@@ -80,7 +84,7 @@ void client::CreateIDFile(Client_Parameters &parameters) {
     if (FileExists(file_path)) {
         Die("The ID file for this client already exists!");
     }
-    int fd = open(file_path, O_CREAT | O_WRONLY, 0777);
+    int fd = open(file_path, O_CREAT | O_WRONLY, ACCESSPERMS);
     if (fd == -1) {
         Die("Couldn't create ID file for client %" PRIu64 "!", parameters.id);
     }
@@ -90,7 +94,15 @@ void client::CreateIDFile(Client_Parameters &parameters) {
     close(fd);
 }
 
-Array<char *> client::GetRegularFiles(const char *path) {
+void client::CreateLogFile(const char *filename) {
+    int fd = creat(filename, ACCESSPERMS);
+    if (fd == -1) {
+        Die("Couldn't create log file <%s>. Terminating!", filename);
+    }
+    close(fd);
+}
+
+Array<char *> client::GetRegularFiles(const char *path, bool full_path) {
     ssize_t file_n = Utils::File::CountReguralFilesInDirectory(path);
     if (file_n == -1) {
         return Array<char *>{};
@@ -101,7 +113,12 @@ Array<char *> client::GetRegularFiles(const char *path) {
     size_t i = 0U;
     while ((entry = readdir(dirp)) != NULL) {
         if (entry->d_type == DT_REG) {
-            files[i++] = AllocateAndCopyString(entry->d_name);
+            if (full_path) {
+                asprintf(&files[i], "%s/%s", path, entry->d_name);
+            } else {
+                files[i] = AllocateAndCopyString(entry->d_name);
+            }
+            ++i;
         }
     }
     closedir(dirp);
@@ -116,10 +133,38 @@ char *client::GetClientID(const char *client_filename) {
     return id;
 }
 
-void client::CreateLogFile(const char *filename) {
-    int fd = creat(filename, 0777);
-    if (fd == -1) {
-        Die("Couldn't create log file <%s>. Terminating!", filename);
+void client::GetRegularFilesRecursively(const char *path, List<char *> &result) {
+    char path_buffer[1024];
+    struct dirent *entry;
+    DIR *dir = opendir(path);
+
+    if (!dir) return;
+
+    while ((entry = readdir(dir)) != NULL) {
+        if (strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0) {
+            strcpy(path_buffer, path);
+            strcat(path_buffer, "/");
+            strcat(path_buffer, entry->d_name);
+
+            if (entry->d_type == DT_REG) {
+                result.Add_Back(AllocateAndCopyString(path_buffer));
+            } else {
+                GetRegularFilesRecursively(path_buffer, result);
+            }
+        }
     }
-    close(fd);
+
+    closedir(dir);
+}
+
+void client::HandleSignal(int signum, siginfo_t *info, void *) {
+    switch (signum) {
+        case SIGUSR1:
+            global_client->Handle_SIGUSR1(info->si_pid);
+            break;
+        case SIGQUIT:
+        case SIGINT:
+            global_client->Handle_SIGINT_SIGQUIT();
+            break;
+    }
 }

@@ -5,6 +5,7 @@
 #include "Array.hpp"
 #include "Hash_Table.hpp"
 #include "String_Utils.hpp"
+#include "ClientProcessInfo.hpp"
 
 using namespace Types;
 using namespace String;
@@ -23,20 +24,37 @@ public:
 
     Client &operator=(Client &&client) = delete;
 
-    ~Client();
+    ~Client() = default;
 
     void Start();
 
+    void Handle_SIGUSR1(pid_t sender_pid);
+
+    void Handle_SIGINT_SIGQUIT();
+
 private:
-    void SpawnProcesses(const char *client);
+    void SpawnProcess(ClientProcessInfo::Profile profile, char *client);
 
-    using Table = Hash_Table<char *, bool, string_hash, equal_string>;
+    void SpawnProcesses(char *client);
 
-    Table clients_map_{17};
+    void RegisterHandlers();
+
+    void WaitAllChildren();
+
+    using ClientTable = Hash_Table<char *, uint, string_hash, equal_string>;
+
+    using ProcessTable = Hash_Table<pid_t, ClientProcessInfo>;
+
+    ClientTable clients_map_{103};
+    ProcessTable process_map_{211};
+    List<ClientProcessInfo> processes_to_restart_{};
+
     Client_Parameters arguments_{};
     Array<char *> arguments_array_{};
     const unsigned int sleep_period_{1};
     bool stop_{};
 };
+
+extern Client *global_client;
 
 #endif //EXERCISE_II_CLIENT_HPP

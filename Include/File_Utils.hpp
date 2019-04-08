@@ -2,6 +2,7 @@
 #define EXERCISE_II_FILE_UTILS_HPP
 
 #include <cstddef>
+#include <sys/stat.h>
 
 namespace Utils::File {
     /**
@@ -32,6 +33,26 @@ namespace Utils::File {
      * On failure returns -1
      */
     ssize_t GetFileSize(const char *filename);
+
+    /**
+     * PathIncludesDirectory - Checks whether the given path has a directory in it
+     * @param path The path to check
+     * @return On success returns true,
+     * On failure returns false.
+     */
+    bool PathIncludesDirectory(const char *path);
+
+    /**
+     * CreateDirectory - Creates the directory of the given path. It creates the whole
+     * structure if the path includes multiple directories
+     * @param path The path to create the directory(ies) from
+     * @param permissions The permissions to give to the directory(ies) to be created. The default is ALLPERMS
+     * @returns Returns true if the directory(ies) created successfully,
+     * else returns false
+     * NOTE (gliontos): You must always include the / at the end of the string.
+     * i.e george/ , george/john/
+     */
+    bool CreateDirectory(char *path, mode_t permissions = ACCESSPERMS);
 }
 
 #endif //EXERCISE_II_FILE_UTILS_HPP
