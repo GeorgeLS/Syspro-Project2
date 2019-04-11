@@ -18,6 +18,8 @@ using namespace File;
 
 using _Profile_ = ClientProcessInfo::Profile;
 
+int log_fd = -1;
+
 // Add some lambda for the swag
 auto GetProfileString = [](_Profile_ profile) {
     if (profile == _Profile_::Sender) {
@@ -28,8 +30,8 @@ auto GetProfileString = [](_Profile_ profile) {
 };
 
 Client::Client(int argc, char **argv)
-: arguments_{ParseClientParameters(argc, argv)},
-arguments_array_{argc + 3U} {
+        : arguments_{ParseClientParameters(argc, argv)},
+          arguments_array_{argc + 3U} {
     ValidateParameters(arguments_);
     for (size_t i = 1U; i != argc; ++i) {
         arguments_array_[i] = argv[i];
@@ -41,39 +43,39 @@ void Client::Start() {
     RegisterHandlers();
     CreateLogFile(arguments_.log_file);
     CreateIDFile(arguments_);
-    int log_fd = open(arguments_.log_file, O_WRONLY);
+    log_fd = open(arguments_.log_file, O_WRONLY);
     if (log_fd == -1) {
         Die("Couldn't open log file! Terminating");
     }
+    FileReport(log_fd, "[C] %" PRIu64 "\n", arguments_.id);
     asprintf(&arguments_array_[arguments_array_.Size() - 2], "%d", log_fd);
     char *id_file;
     asprintf(&id_file, "%" PRIu64 ".id", arguments_.id);
-    clients_map_[id_file] = {0U, true};
-    while (!stop_) {
+    clients_map_[id_file] = true;
+    while (true) {
         sleep(sleep_period_);
         ResetClientMarks();
         Array<char *> clients = GetRegularFiles(arguments_.common_dir);
         for (size_t i = 0U; i != clients.Size(); ++i) {
             char *client = clients[i];
             if (!clients_map_.Contains(client)) {
-                clients_map_[client] = {0U, true};
+                clients_map_[client] = true;
                 SpawnProcesses(client);
             } else {
-                clients_map_[client].second = true;
+                clients_map_[client] = true;
                 free(client);
             }
         }
-        
+
         CleanupDeletedClients();
-        
+
         FOREACH (processes_to_restart_) {
             auto &value = *it;
-            SpawnProcess(value.profile_, value.clientID_);
+            SpawnProcess(value.profile_, value.clientID_, value.reties_);
         }
         processes_to_restart_.Clear();
         WaitAllChildren();
     }
-    free(id_file);
 }
 
 void Client::WaitAllChildren() {
@@ -86,8 +88,12 @@ void Client::WaitAllChildren() {
             int status;
             pid_t res = waitpid(pid, &status, WNOHANG);
             if (res > 0) {
-                ReportMessage("[Client %" PRIu64 "]: %s finished successfully for client %s",
-                              arguments_.id, GetProfileString(info.profile_), info.clientID_);
+                if (status == EXIT_SUCCESS) {
+                    char *clientID = GetClientID(info.clientID_);
+                    ReportMessage("[Client %" PRIu64 "]: %s finished successfully for client %s",
+                                  arguments_.id, GetProfileString(info.profile_), clientID);
+                    free(clientID);
+                }
                 list.Remove(it);
             }
         }
@@ -99,7 +105,7 @@ void Client::ResetClientMarks() {
         auto &list = clients_map_.ListAt(i);
         if (list.Size() == 0) continue;
         FOREACH (list) {
-            bool &checked = (*it).second.second;
+            bool &checked = (*it).second;
             checked = false;
         }
     }
@@ -110,16 +116,16 @@ void Client::CleanupDeletedClients() {
         auto &list = clients_map_.ListAt(i);
         if (list.Size() == 0) continue;
         FOREACH (list) {
-            bool &checked = (*it).second.second;
+            bool &checked = (*it).second;
             if (!checked) {
-                SpawnProcess(_Profile_::Cleaner, (*it).first);
+                SpawnProcess(_Profile_::Cleaner, (*it).first, 0);
                 list.Remove(it);
             }
         }
     }
 }
 
-void Client::SpawnProcess(_Profile_ profile, char *client) {
+void Client::SpawnProcess(_Profile_ profile, char *client, uint retries_so_far) {
     arguments_array_[arguments_array_.Size() - 3] = client;
     switch (profile) {
         case _Profile_::Sender: {
@@ -137,12 +143,12 @@ void Client::SpawnProcess(_Profile_ profile, char *client) {
     }
     Process process{arguments_array_[0], arguments_array_};
     process.Spawn();
-    process_map_[process.PID()] = {client, profile};
+    process_map_[process.PID()] = {client, profile, retries_so_far};
 }
 
 void Client::SpawnProcesses(char *client) {
-    SpawnProcess(_Profile_::Sender, client);
-    SpawnProcess(_Profile_::Receiver, client);
+    SpawnProcess(_Profile_::Sender, client, 0);
+    SpawnProcess(_Profile_::Receiver, client, 0);
 }
 
 void Client::RegisterHandlers() {
@@ -157,23 +163,39 @@ void Client::RegisterHandlers() {
 
 void Client::Handle_SIGUSR1(pid_t sender_pid) {
     ClientProcessInfo &info = process_map_[sender_pid];
+    char *clientID = GetClientID(info.clientID_);
     ReportError("[Client %" PRIu64 "]: %s for client %s failed",
-                arguments_.id, GetProfileString(info.profile_), info.clientID_);
+                arguments_.id, GetProfileString(info.profile_), clientID);
+    free(clientID);
     if (clients_map_.Contains(info.clientID_)) {
-        uint &retries = clients_map_[info.clientID_].first;
+        uint &retries = process_map_[sender_pid].reties_;
         if (retries < 4) {
             ++retries;
             processes_to_restart_.Add_Back(info);
         }
     }
-    process_map_.Remove(sender_pid);
+//    process_map_.Remove(sender_pid);
 }
 
 void Client::Handle_SIGINT_SIGQUIT() {
+    if (log_fd != -1) {
+        FileReport(log_fd, "[L] %" PRIu64 "\n", arguments_.id);
+    }
+    // Send SIGQUIT to all children currently running
+    for (size_t i = 0U; i != process_map_.Buckets(); ++i) {
+        auto &list = process_map_.ListAt(i);
+        if (list.Size() == 0) continue;
+        FOREACH (list) {
+            auto &value = *it;
+            kill(value.first, SIGQUIT);
+        }
+    }
+
     char *id_file_path;
     asprintf(&id_file_path, "%s/%" PRIu64 ".id", arguments_.common_dir, arguments_.id);
     remove(id_file_path);
-    DeleteDirectory(arguments_.mirror_dir);
     free(id_file_path);
-    stop_ = true;
+    DeleteDirectory(arguments_.mirror_dir);
+    this->~Client();
+    exit(EXIT_SUCCESS);
 }

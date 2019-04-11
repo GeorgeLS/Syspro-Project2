@@ -10,53 +10,53 @@ using namespace Types;
 
 namespace Wrappers {
     class Pipe {
-		public:
+    public:
         class PipeException : public std::exception {
-			public:
+        public:
             PipeException(const char *message) : message_{message} {};
-			
+
             const char *what() const throw() override {
                 return message_;
             }
-			
-			private:
+
+        private:
             const char *message_;
         };
-		
+
         enum Mode {
             Read_Only = O_RDONLY,
             Write_Only = O_WRONLY,
             Read_Write = O_RDWR,
             Non_Blocking = O_NONBLOCK
         };
-		
+
         Pipe() = delete;
-		
+
         Pipe(const char *path, size_t buffer_size);
-		
+
         Pipe(const Pipe &other) = delete;
-		
+
         Pipe(Pipe &&other) = delete;
-		
+
         Pipe &operator=(const Pipe &other) = delete;
-		
+
         Pipe &operator=(Pipe &&other) = delete;
-		
-		template<typename T>
-			Pipe &Write(const T &data) {
+
+        template<typename T>
+        Pipe &Write(const T &data) {
             if (write(fd_, &data, sizeof(T)) == -1) {
                 throw PipeException("Error while writing to pipe");
             }
             return *this;
         }
-		
+
         Pipe &Write(void *data, size_t bytes) {
             if (write(fd_, data, bytes) == -1) {
                 throw PipeException("Error while writing to pipe");
             }
             return *this;
         }
-		
+
         ssize_t Read(size_t bytes) {
             memset(buffer_.C_Array(), '\0', buffer_.Size());
             if (bytes > buffer_.Size()) {
@@ -76,46 +76,46 @@ namespace Wrappers {
             }
             return res;
         }
-		
+
         Pipe &operator<<(const char *str) {
             return Write((void *) str, strlen(str));
         }
-		
+
         template<typename T, typename std::enable_if<std::is_integral<T>::value, bool>::type = true>
-			Pipe &operator<<(const T &value) { return Write(value); }
-		
+        Pipe &operator<<(const T &value) { return Write(value); }
+
         template<typename T, typename std::enable_if<std::is_integral<T>::value, bool>::type = true>
-			Pipe &operator>>(const T &value) {
+        Pipe &operator>>(const T &value) {
             read(fd_, (void *) &value, sizeof(T));
             return *this;
         }
-		
+
         Pipe &operator>>(Array<char> &buffer) {
             read(fd_, buffer.C_Array(), buffer.Size());
             return *this;
         }
-		
+
         ~Pipe();
-		
+
         bool Open(Mode mode);
-		
+
         bool Close();
-		
+
         void SetTimeout(int seconds);
-		
+
         inline Array<char> &Buffer() { return buffer_; }
-		
+
         inline size_t BufferSize() const { return buffer_.Size(); }
-		
+
         inline char *Contents() const { return buffer_.C_Array(); };
-		
+
         template<typename T>
-			inline T GetContentsAs() { return *(T *) buffer_.C_Array(); };
-		
+        inline T GetContentsAs() { return *(T *) buffer_.C_Array(); };
+
         inline const char *Name() const { return path_; };
-		
+
         bool error{};
-		private:
+    private:
         Array<char> buffer_;
         const char *path_;
         int fd_;

@@ -10,6 +10,7 @@ struct ClientProcessInfo {
     
     char *clientID_;
     Profile profile_;
+    uint reties_;
 };
 
 

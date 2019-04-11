@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 GetRandomString() {
-    RANDOM_STRING=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w $(( ( $RANDOM % $1 ) + 1 )) | head -n 1)
+    RANDOM_STRING=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w $(( ( $RANDOM % $2 ) + $1 )) | head -n 1)
 }
 
 # Main script code begins here
@@ -39,7 +39,7 @@ DIR_NAMES_STR=""
 
 for (( I = 0; I < ${DIR_N}; ++I )); do
     DIR_NAMES_STR+=" "
-    GetRandomString 8
+    GetRandomString 1 8
     DIR_NAMES_STR+=${RANDOM_STRING}
 done
 
@@ -59,7 +59,7 @@ FILE_NAMES_STR=""
 
 for (( I = 0; I < ${FILES_N}; ++I )); do
     FILE_NAMES_STR+=" "
-    GetRandomString 8
+    GetRandomString 1 8
     FILE_NAMES_STR+=${RANDOM_STRING}
 done
 
@@ -68,12 +68,13 @@ FILE_NAMES=( ${FILE_NAMES_STR} )
 DIR_PATH="${DIR_NAME}"
 J=0
 
+MIN_BYTES=1024
 MAX_BYTES=131072
 
 for (( I = 0; I < ${FILES_N}; ++I )); do
     FILENAME="${DIR_PATH}/${FILE_NAMES[I]}"
     touch ${FILENAME}
-    GetRandomString ${MAX_BYTES}
+    GetRandomString ${MIN_BYTES} ${MAX_BYTES}
     echo ${RANDOM_STRING} > ${FILENAME}
     if [[ $(( $J % ${LEVELS} )) -eq 0 && ! ( J -eq 0 ) ]]; then
         DIR_PATH="${DIR_NAME}/${DIR_NAMES[J]}"

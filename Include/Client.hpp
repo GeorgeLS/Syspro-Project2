@@ -33,7 +33,7 @@ public:
     void Handle_SIGINT_SIGQUIT();
 
 private:
-    void SpawnProcess(ClientProcessInfo::Profile profile, char *client);
+    void SpawnProcess(ClientProcessInfo::Profile profile, char *client, uint retries_so_far);
 
     void SpawnProcesses(char *client);
 
@@ -45,7 +45,7 @@ private:
 
     void CleanupDeletedClients();
 
-    using ClientTable = Hash_Table<char *, std::pair<uint, bool>, string_hash, equal_string>;
+    using ClientTable = Hash_Table<char *, bool, string_hash, equal_string>;
 
     using ProcessTable = Hash_Table<pid_t, ClientProcessInfo>;
 
@@ -56,7 +56,6 @@ private:
     Client_Parameters arguments_{};
     Array<char *> arguments_array_{};
     const unsigned int sleep_period_{1};
-    bool stop_{};
 };
 
 extern Client *global_client;

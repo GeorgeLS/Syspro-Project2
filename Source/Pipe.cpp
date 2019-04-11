@@ -17,6 +17,7 @@ Wrappers::Pipe::Pipe(const char *path, const size_t buffer_size)
 
 Wrappers::Pipe::~Pipe() {
     if (fd_ != -1) Close();
+    free((void *) path_);
 }
 
 bool Wrappers::Pipe::Open(Mode mode) {
