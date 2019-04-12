@@ -3,8 +3,9 @@ SDIR := Source
 ODIR := .OBJ
 
 CC := g++
-CFLAGS = -Ofast -std=c++11
-CFLAGS += -Wall
+CLFAGS := -std=c++11
+#CFLAGS += -Ofast
+#CFLAGS += -Wall
 CFLAGS += -I$(IDIR) -MMD
 
 _SRC := $(shell find $(SDIR) -name "*.cpp")

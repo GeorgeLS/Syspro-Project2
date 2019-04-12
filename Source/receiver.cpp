@@ -41,7 +41,7 @@ void Free_Resources() {
 // NOTE (gliontos): This is only going to be called from the signals sent by the parent process
 void Handle_Signal(int signum) {
     Free_Resources();
-    exit(EXIT_FAILURE);
+    exit(EXIT_SUCCESS);
 }
 
 void RegisterSignals() {
@@ -86,7 +86,7 @@ int main(int argc, char **argv) {
     }
 	
     auto &full_path_filename = resources.full_path_filename;
-
+	
     while (true) {
         uint16_t filename_length{};
         try {
@@ -99,7 +99,7 @@ int main(int argc, char **argv) {
         if (filename_length == 0U) break;
 		
         try {
-            pipe.Read(filename_length);
+            if (pipe.Read(filename_length) == 0U) goto __ERROR__;
         } catch (Pipe::PipeException &exception) {
             ReportError("%s", exception.what());
             goto __ERROR__;
@@ -111,8 +111,11 @@ int main(int argc, char **argv) {
         try {
             pipe >> file_size;
         } catch (Pipe::PipeException &exception) {
+			ReportError("%s", exception.what());
             goto __ERROR__;
         }
+		
+		if (file_size == 0U) goto __ERROR__;
         uint32_t original_file_size = file_size;
 		
         // This will create the directory structure of the file to receive if any
@@ -128,13 +131,13 @@ int main(int argc, char **argv) {
         while (file_size > 0) {
             try {
                 ssize_t bytes_read = pipe.Read(file_size);
-                char *contents = pipe.Contents();
+				if (bytes_read == 0U) goto __ERROR__; 
+				char *contents = pipe.Contents();
                 contents[bytes_read] = '\0';
                 write(fd, contents, bytes_read);
                 file_size -= bytes_read;
             } catch (Pipe::PipeException &exception) {
-				close(fd);
-				remove(full_path_filename);
+				ReportError("%s", exception.what());
 				goto __ERROR__;
 			}
 		}

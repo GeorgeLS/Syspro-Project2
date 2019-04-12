@@ -85,13 +85,12 @@ namespace Wrappers {
         Pipe &operator<<(const T &value) { return Write(value); }
 
         template<typename T, typename std::enable_if<std::is_integral<T>::value, bool>::type = true>
-        Pipe &operator>>(const T &value) {
-            read(fd_, (void *) &value, sizeof(T));
-            return *this;
-        }
-
-        Pipe &operator>>(Array<char> &buffer) {
-            read(fd_, buffer.C_Array(), buffer.Size());
+        Pipe &operator>>(T &value) {
+            if (Read(sizeof(T)) == 0) {
+                value = 0;
+            } else {
+                value = GetContentsAs<T>();
+            }
             return *this;
         }
 

@@ -65,12 +65,12 @@ int main(int argc, char **argv) {
 	receiver_id = GetClientID(argv[argc - 2]);
 	asprintf(&pipe_name, "%s/id%" PRIu64 "_to_id%s.fifo",
 			 arguments.common_dir, arguments.id, receiver_id);
-
+	
     int64_t log_fd;
     if (!String::StringToInt64(argv[argc - 1], &log_fd)) {
         Die("Couldn't parse log file descriptor");
     }
-
+	
 	Pipe pipe{pipe_name, arguments.buffer_size};
 	resources.pipe = &pipe;
 	
@@ -127,7 +127,7 @@ int main(int argc, char **argv) {
 				goto __ERROR__;
 			}
 		}
-
+		
 		FileReport(log_fd, "[S] %s %" PRIu32 "\n", full_path_filename + input_dir_length, file_size);
 		close(fd);
 	}
